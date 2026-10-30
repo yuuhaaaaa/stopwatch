@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>크리스마스 스탑워치</title>
+<style>
+  :root {
+    --bg-top: #0b2a1f;
+    --bg-bottom: #12402e;
+    --card: #fffaf0;
+    --text: #3b1d14;
+    --muted: #8a6a5a;
+    --border: #ecdcc6;
+    --red: #c8102e;
+    --green: #1f7a3a;
+    --gold: #d4a017;
+    --neutral: #e9dcc7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-top: #050f0b;
+      --bg-bottom: #0b241a;
+      --card: #1f1512;
+      --text: #fbeee0;
+      --muted: #b59a88;
+      --border: #3a2a24;
+      --neutral: #3a2a24;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 48px 16px;
+    background: linear-gradient(var(--bg-top), var(--bg-bottom));
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* 눈 내리는 효과 */
+  .snow {
+    position: fixed;
+    top: -10px;
+    color: #fff;
+    opacity: 0.8;
+    pointer-events: none;
+    animation: fall linear infinite;
+    z-index: 0;
+  }
+  @keyframes fall {
+    to { transform: translate(var(--drift), 105vh) rotate(360deg); }
+  }
+
+  .watch {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border-radius: 24px;
+    padding: 28px 24px 24px;
+    border: 4px solid var(--red);
+    box-shadow: 0 0 0 4px var(--card), 0 0 0 8px var(--green), 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+  /* 리본 */
+  .bow {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 72px;
+    height: 48px;
+  }
+  .title {
+    text-align: center;
+    margin: 8px 0 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--red);
+    letter-spacing: 1px;
+  }
+  .title span { color: var(--green); }
+
+  /* 전구 장식 */
+  .lights {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 4px 0;
+  }
+  .lights i {
+    width: 10px;
+    height: 14px;
+    border-radius: 50%;
+    animation: blink 1.6s infinite;
+  }
+  .lights i:nth-child(4n+1) { background: var(--red); }
+  .lights i:nth-child(4n+2) { background: var(--gold); animation-delay: 0.4s; }
+  .lights i:nth-child(4n+3) { background: var(--green); animation-delay: 0.8s; }
+  .lights i:nth-child(4n)   { background: #2b6cd4; animation-delay: 1.2s; }
+  @keyframes blink {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px currentColor; }
+    50% { opacity: 0.35; }
+  }
+
+  .display {
+    text-align: center;
+    font-size: clamp(48px, 16vw, 72px);
+    font-weight: 200;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    margin: 16px 0 28px;
+  }
+  .display .ms { font-size: 0.6em; color: var(--muted); }
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .tree { font-size: 40px; }
+  button {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    border: 3px solid var(--gold);
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text);
+    background: var(--neutral);
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  button:active { transform: scale(0.95); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.start { background: var(--green); color: #fff; }
+  button.stop { background: var(--red); color: #fff; }
+  .laps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+    border-top: 2px dashed var(--border);
+  }
+  .laps li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .laps li.best { color: var(--green); font-weight: 600; }
+  .laps li.best span:first-child::before { content: "🎁 "; }
+  .laps li.worst { color: var(--red); font-weight: 600; }
+  .laps li.worst span:first-child::before { content: "🦌 "; }
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 16px;
+  }
+  kbd {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: inherit;
+  }
+</style>
+</head>
+<body>
+  <div class="watch">
+    <svg class="bow" viewBox="0 0 72 48" aria-hidden="true">
+      <!-- 리본 꼬리 -->
+      <path d="M33 26 L22 46 L28 43 L31 47 L36 28 Z" fill="var(--red)" stroke="var(--gold)" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M39 26 L50 46 L44 43 L41 47 L36 28 Z" fill="var(--red)" stroke="var(--gold)" stroke-width="1.5" stroke-linejoin="round"/>
+      <!-- 고리 -->
+      <path d="M36 22 C26 6, 4 6, 6 20 C8 32, 28 30, 36 22 Z" fill="var(--red)" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M36 22 C46 6, 68 6, 66 20 C64 32, 44 30, 36 22 Z" fill="var(--red)" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round"/>
+      <!-- 매듭 -->
+      <ellipse cx="36" cy="22" rx="6" ry="7" fill="var(--gold)" stroke="#a87c0c" stroke-width="1.5"/>
+    </svg>
+    <h1 class="title">Merry <span>Christmas</span> ⏱</h1>
+    <div class="lights"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="display" id="display">00:00<span class="ms">.00</span></div>
+    <div class="controls">
+      <button id="lapBtn" disabled>랩</button>
+      <span class="tree">🎄</span>
+      <button id="startBtn" class="start">시작</button>
+    </div>
+    <ul class="laps" id="laps"></ul>
+    <div class="hint"><kbd>Space</kbd> 시작/정지 · <kbd>L</kbd> 랩 · <kbd>R</kbd> 재설정</div>
+  </div>
+
+<script>
+  // 눈송이 생성
+  for (let i = 0; i < 40; i++) {
+    const flake = document.createElement('div');
+    flake.className = 'snow';
+    flake.textContent = Math.random() < 0.5 ? '❄' : '•';
+    flake.style.left = Math.random() * 100 + 'vw';
+    flake.style.fontSize = 8 + Math.random() * 14 + 'px';
+    flake.style.animationDuration = 6 + Math.random() * 10 + 's';
+    flake.style.animationDelay = -Math.random() * 16 + 's';
+    flake.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
+    document.body.appendChild(flake);
+  }
+
+  const display = document.getElementById('display');
+  const startBtn = document.getElementById('startBtn');
+  const lapBtn = document.getElementById('lapBtn');
+  const lapList = document.getElementById('laps');
+
+  let running = false;
+  let startTime = 0;   // performance.now() 기준 시작 시각
+  let elapsed = 0;     // 정지 시점까지 누적된 시간(ms)
+  let lapStart = 0;    // 현재 랩이 시작된 누적 시간
+  let laps = [];
+  let rafId = null;
+
+  function format(ms) {
+    const totalCs = Math.floor(ms / 10);
+    const cs = totalCs % 100;
+    const totalSec = Math.floor(totalCs / 100);
+    const s = totalSec % 60;
+    const m = Math.floor(totalSec / 60) % 60;
+    const h = Math.floor(totalSec / 3600);
+    const pad = n => String(n).padStart(2, '0');
+    const main = (h > 0 ? h + ':' : '') + pad(m) + ':' + pad(s);
+    return { main, cs: '.' + pad(cs) };
+  }
+
+  function now() {
+    return running ? elapsed + (performance.now() - startTime) : elapsed;
+  }
+
+  function render() {
+    const t = format(now());
+    display.innerHTML = `${t.main}<span class="ms">${t.cs}</span>`;
+    if (running) {
+      updateCurrentLap();
+      rafId = requestAnimationFrame(render);
+    }
+  }
+
+  function updateCurrentLap() {
+    const current = lapList.querySelector('li.current span:last-child');
+    if (current) {
+      const t = format(now() - lapStart);
+      current.textContent = t.main + t.cs;
+    }
+  }
+
+  function renderLaps() {
+    lapList.innerHTML = '';
+    const showCurrent = running || elapsed > 0;
+    if (showCurrent) {
+      const li = document.createElement('li');
+      li.className = 'current';
+      const t = format(now() - lapStart);
+      li.innerHTML = `<span>랩 ${laps.length + 1}</span><span>${t.main + t.cs}</span>`;
+      lapList.appendChild(li);
+    }
+    let min = Infinity, max = -Infinity;
+    if (laps.length >= 2) {
+      min = Math.min(...laps);
+      max = Math.max(...laps);
+    }
+    for (let i = laps.length - 1; i >= 0; i--) {
+      const li = document.createElement('li');
+      if (laps[i] === min) li.className = 'best';
+      else if (laps[i] === max) li.className = 'worst';
+      const t = format(laps[i]);
+      li.innerHTML = `<span>랩 ${i + 1}</span><span>${t.main + t.cs}</span>`;
+      lapList.appendChild(li);
+    }
+  }
+
+  function updateButtons() {
+    if (running) {
+      startBtn.textContent = '정지';
+      startBtn.className = 'stop';
+      lapBtn.textContent = '랩';
+      lapBtn.disabled = false;
+    } else {
+      startBtn.textContent = '시작';
+      startBtn.className = 'start';
+      lapBtn.textContent = '재설정';
+      lapBtn.disabled = elapsed === 0;
+      if (elapsed === 0) lapBtn.textContent = '랩';
+    }
+  }
+
+  function toggle() {
+    if (running) {
+      elapsed += performance.now() - startTime;
+      running = false;
+      cancelAnimationFrame(rafId);
+      render();
+    } else {
+      startTime = performance.now();
+      running = true;
+      if (lapList.children.length === 0) renderLaps();
+      render();
+    }
+    updateButtons();
+  }
+
+  function lap() {
+    if (!running) return;
+    const t = now();
+    laps.push(t - lapStart);
+    lapStart = t;
+    renderLaps();
+  }
+
+  function reset() {
+    if (running) return;
+    elapsed = 0;
+    lapStart = 0;
+    laps = [];
+    render();
+    renderLaps();
+    updateButtons();
+  }
+
+  startBtn.addEventListener('click', toggle);
+  lapBtn.addEventListener('click', () => running ? lap() : reset());
+
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'l' || e.key === 'L') lap();
+    else if (e.key === 'r' || e.key === 'R') reset();
+  });
+</script>
+</body>
+</html>
